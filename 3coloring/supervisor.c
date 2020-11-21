@@ -143,7 +143,7 @@ int main( int argc, char *argv[] ) {
 
     int bestSolutionCount = 100000;
     Edge bestSolution[8];
-    while (!terminate) {
+    while (!quit) {
 
         if (sem_wait(s_used) == -1) {
             if (errno == EINTR) {
