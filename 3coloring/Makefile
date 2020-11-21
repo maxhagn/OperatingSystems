@@ -13,11 +13,13 @@ all: supervisor generator
 generator: generator.o
 	$(CC) -o generator generator.o
 
+supervisor: supervisor.o
+	$(CC) -o supervisor supervisor.o
+
 generator.o: generator.c
 	$(CC) $(CFLAGS) $(DEFS) -c generator.c
 
-supervisor: supervisor.o
-	$(CC) -o supervisor supervisor.o
+
 
 supervisor.o: supervisor.c
 	$(CC) $(CFLAGS) $(DEFS) -c supervisor.c

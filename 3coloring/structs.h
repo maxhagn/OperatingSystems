@@ -10,6 +10,26 @@
 #ifndef STRUCTS_H
 #define STRUCTS_H
 
+/**
+ * semaphore that indicates free space
+ * */
+#define SEM_FREE "/11808237_sem_free"
+
+/**
+ * semaphore that indicates used space
+ * */
+#define SEM_USED "/11808237_sem_used"
+
+/**
+ * semaphore for write access
+ * */
+#define SEM_WRITE "/11808237_sem_write"
+
+/**
+ * shared memory for circular buffer
+ * */
+#define SHM "/11808237_shm"
+
 // Representation of an Edge, with two integer values for vertex index
 struct Edge {
     int from;
@@ -29,13 +49,6 @@ struct ShmObj {
     Edge data[50][8];
 };
 typedef struct ShmObj ShmObj;
-
-// Defines an array of edges, length indicates the current size of the array
-struct EdgeArray {
-    int length;
-    Edge **content;
-};
-typedef struct EdgeArray EdgeArray;
 
 #endif
 

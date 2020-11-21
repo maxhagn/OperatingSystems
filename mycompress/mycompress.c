@@ -12,8 +12,8 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <getopt.h>
+#include "mycompress.h"
 
-FILE *outputFile;
 int charCounter;
 int writeCounter;
 
@@ -34,63 +34,65 @@ void printUsageError() {
 
 }
 
-/**
- * printUsageError function.
- * @brief Usage of program is printed to stderr and program is exited with failure code
- * @details global variables: program_name, contains the name of the program
- **/
-int checkOccurrence(char prev, char active) {
-    static int counter = 0;
-
-    if (prev == EOF) {
-        counter++;
-    } else if (prev == active) {
-        counter++;
-    } else if (prev != active || active == EOF) {
-        charCounter += counter;
-        writeCounter += 2;
-        fprintf(outputFile, "%c%i", prev, counter);
-        counter = 1;
-    }
-
-    return counter;
-}
 
 /**
- * printUsageError function.
- * @brief Usage of program is printed to stderr and program is exited with failure code
- * @details global variables: program_name, contains the name of the program
+ * Compress function. Compresses input file to output file
+ * @brief this functions iterates through all characters from the input
+ * file and manages the occuourences
+ * @param files contains current files
+ * @param counter contains char count and written count
  **/
-char getSingleChars(FILE *inputFile) {
+char compress(Files files, Counter * counter) {
 
     char active;
     char prev = EOF;
+    int current_char_counter = 0;
 
-    while ((active = fgetc(inputFile)) != EOF) {
+    while ((active = fgetc(files.inputFile)) != EOF) {
 
-        checkOccurrence(prev, active);
+        if (prev == EOF) {
+            current_char_counter++;
+        } else if (prev == active) {
+            current_char_counter++;
+        } else if (prev != active || active == EOF) {
+            counter->char_counter += current_char_counter;
+            counter->written_counter += 2;
+            fprintf(files.outputFile, "%c%i", prev, current_char_counter);
+            current_char_counter = 1;
+        }
         prev = active;
 
     }
-    checkOccurrence(prev, EOF);
 
-    fclose(inputFile);
+    counter->char_counter += current_char_counter;
+    counter->written_counter += 2;
+    fprintf(files.outputFile, "%c%i", prev, current_char_counter);
+
+    fclose(files.inputFile);
 
     return 0;
 }
 
 /**
- * printUsageError function.
- * @brief Usage of program is printed to stderr and program is exited with failure code
- * @details global variables: program_name, contains the name of the program
+ * Program entry point.
+ * @brief The program starts here. This function takes care about parameters and calls
+ * the compress function for every input file
+ * @param argc The argument counter.
+ * @param argv The argument vector.
  **/
 int main(int argc, char **argv) {
 
     int option;
-    outputFile = stdout;
-    FILE *inputFile = stdin;
-    int oflag = 0;
-    int optionCounter = 0;
+    Counter counter;
+    counter.char_counter = 0;
+    counter.written_counter = 0;
+
+    Files files;
+    files.inputFile = stdin;
+    files.outputFile = stdout;
+
+    int o_flag = 0;
+    int current_arg = 0;
 
     while ((option = getopt(argc, argv, "o:")) != -1) {
 
@@ -99,19 +101,19 @@ int main(int argc, char **argv) {
 
             case 'o':
 
-                if (oflag) {
+                if (o_flag) {
 
                     printf("Only one -o Option allowed\n");
                     printUsageError();
 
                 } else {
 
-                    oflag++;
+                    o_flag++;
 
                 }
 
                 printf("Writing compression to file '%s' ! \n", optarg);
-                outputFile = fopen(optarg, "w");
+                files.outputFile = fopen(optarg, "w");
                 break;
 
             case '?':
@@ -121,40 +123,40 @@ int main(int argc, char **argv) {
     }
 
 
-    if (!oflag) {
+    if (!o_flag) {
 
         printf("Writing compression to 'stdout' ! \n");
-        optionCounter = oflag + 1;
+        current_arg = o_flag + 1;
 
     } else {
 
-        optionCounter = oflag + 2;
+        current_arg = o_flag + 2;
 
     }
 
-    if (oflag < argc) {
+    if (o_flag < argc) {
 
         for (;
-                optionCounter < argc;
-                optionCounter++) {
+                current_arg < argc;
+                current_arg++) {
 
-            inputFile = fopen(argv[optionCounter], "r");
-            getSingleChars(inputFile);
-            fclose(inputFile);
+            files.inputFile = fopen(argv[current_arg], "r");
+            compress(files, &counter);
+            fclose(files.inputFile);
 
         }
 
     } else {
 
-        getSingleChars(inputFile);
+        compress(files, &counter);
 
     }
 
-    float ratio = ((float) writeCounter / charCounter) * 100;
+    float ratio = ((float) counter.written_counter / counter.char_counter) * 100;
     fprintf(stderr,
-            "\nRead: %7i characters\nWritten: %4i characters\nCompression ratio: %4.2f%%\n", charCounter, writeCounter,
+            "\nRead: %7i characters\nWritten: %4i characters\nCompression ratio: %4.2f%%\n", counter.char_counter , counter.written_counter ,
             ratio);
-    fclose(outputFile);
+    fclose(files.outputFile);
     exit(EXIT_SUCCESS);
 
     return 0;

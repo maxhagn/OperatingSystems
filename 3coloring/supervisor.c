@@ -71,14 +71,14 @@ int main( int argc, char *argv[] ) {
         printUsageError();
     }
 
-    int shmfd = shm_open("/shm", O_RDWR | O_CREAT | O_EXCL, 0600);
+    int shmfd = shm_open(SHM, O_RDWR | O_CREAT | O_EXCL, 0600);
     if (shmfd == -1) {
         exit(EXIT_FAILURE);
     }
 
     if (ftruncate(shmfd, sizeof(ShmObj)) < 0) {
         close(shmfd);
-        shm_unlink("/shm");
+        shm_unlink(SHM);
         exit(EXIT_FAILURE);
     }
 
@@ -87,7 +87,7 @@ int main( int argc, char *argv[] ) {
 
     if (shm_obj == MAP_FAILED) {
         close(shmfd);
-        shm_unlink("/shm");
+        shm_unlink(SHM);
         exit(EXIT_FAILURE);
     }
 
@@ -96,37 +96,37 @@ int main( int argc, char *argv[] ) {
 
     if (close(shmfd) == -1) {
         munmap(shm_obj, sizeof(*shm_obj));
-        shm_unlink("/shm");
+        shm_unlink(SHM);
         exit(EXIT_FAILURE);
     }
 
-    sem_unlink("/s_free");
-    sem_unlink("/s_used");
-    sem_unlink("/s_write");
-    sem_t *s_free = sem_open("/s_free", O_CREAT | O_EXCL, 0600, 50);
+    sem_unlink(SEM_FREE);
+    sem_unlink(SEM_USED);
+    sem_unlink(SEM_WRITE);
+    sem_t *s_free = sem_open(SEM_FREE, O_CREAT | O_EXCL, 0600, 50);
     if (s_free == SEM_FAILED) {
         munmap(shm_obj, sizeof(*shm_obj));
-        shm_unlink("/shm");
+        shm_unlink(SHM);
         exit(EXIT_FAILURE);
     }
 
-    sem_t *s_used = sem_open("/s_used", O_CREAT | O_EXCL, 0600, 0);
+    sem_t *s_used = sem_open(SEM_USED, O_CREAT | O_EXCL, 0600, 0);
     if (s_used == SEM_FAILED) {
         munmap(shm_obj, sizeof(*shm_obj));
-        shm_unlink("/shm");
+        shm_unlink(SHM);
         sem_close(s_free);
-        sem_unlink("/s_free");
+        sem_unlink(SEM_FREE);
         exit(EXIT_FAILURE);
     }
 
-    sem_t *s_write = sem_open("/s_write", O_CREAT | O_EXCL, 0600, 1);
+    sem_t *s_write = sem_open(SEM_WRITE, O_CREAT | O_EXCL, 0600, 1);
     if (s_write == SEM_FAILED) {
         munmap(shm_obj, sizeof(*shm_obj));
-        shm_unlink("/shm");
+        shm_unlink(SHM);
         sem_close(s_free);
-        sem_unlink("/s_free");
+        sem_unlink(SEM_FREE);
         sem_close(s_used);
-        sem_unlink("/s_used");
+        sem_unlink(SEM_USED);
         exit(EXIT_FAILURE);
     }
 
@@ -198,13 +198,13 @@ int main( int argc, char *argv[] ) {
         exit_code = EXIT_FAILURE;
     }
 
-    if (sem_unlink("/s_free") == -1) {
+    if (sem_unlink(SEM_FREE) == -1) {
         exit_code = EXIT_FAILURE;
     }
-    if (sem_unlink("/s_used") == -1) {
+    if (sem_unlink(SEM_USED) == -1) {
         exit_code = EXIT_FAILURE;
     }
-    if (sem_unlink("/s_write") == -1) {
+    if (sem_unlink(SEM_WRITE) == -1) {
         exit_code = EXIT_FAILURE;
     }
 
@@ -212,7 +212,7 @@ int main( int argc, char *argv[] ) {
         exit_code = EXIT_FAILURE;
     }
 
-    if (shm_unlink("/shm") == -1) {
+    if (shm_unlink(SHM) == -1) {
         exit_code = EXIT_FAILURE;
     }
 
