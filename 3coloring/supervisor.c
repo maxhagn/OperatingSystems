@@ -71,33 +71,31 @@ int main( int argc, char *argv[] ) {
         printUsageError();
     }
 
-    /* erzeugt ein shared memory object */
     int shmfd = shm_open("/shm", O_RDWR | O_CREAT | O_EXCL, 0600);
     if (shmfd == -1) {
         exit(EXIT_FAILURE);
     }
 
-    /* change size to size of an shmobj struct */
     if (ftruncate(shmfd, sizeof(ShmObj)) < 0) {
         close(shmfd);
         shm_unlink("/shm");
         exit(EXIT_FAILURE);
     }
 
-    ShmObj *shmObj;
-    shmObj = mmap(NULL, sizeof(*shmObj), PROT_READ | PROT_WRITE, MAP_SHARED, shmfd, 0);
+    ShmObj *shm_obj;
+    shm_obj = mmap(NULL, sizeof(*shm_obj), PROT_READ | PROT_WRITE, MAP_SHARED, shmfd, 0);
 
-    if (shmObj == MAP_FAILED) {
+    if (shm_obj == MAP_FAILED) {
         close(shmfd);
         shm_unlink("/shm");
         exit(EXIT_FAILURE);
     }
 
-    shmObj->writePos = 0;
-    shmObj->readPos = 0;
+    shm_obj->writePos = 0;
+    shm_obj->readPos = 0;
 
     if (close(shmfd) == -1) {
-        munmap(shmObj, sizeof(*shmObj));
+        munmap(shm_obj, sizeof(*shm_obj));
         shm_unlink("/shm");
         exit(EXIT_FAILURE);
     }
@@ -107,14 +105,14 @@ int main( int argc, char *argv[] ) {
     sem_unlink("/s_write");
     sem_t *s_free = sem_open("/s_free", O_CREAT | O_EXCL, 0600, 50);
     if (s_free == SEM_FAILED) {
-        munmap(shmObj, sizeof(*shmObj));
+        munmap(shm_obj, sizeof(*shm_obj));
         shm_unlink("/shm");
         exit(EXIT_FAILURE);
     }
 
     sem_t *s_used = sem_open("/s_used", O_CREAT | O_EXCL, 0600, 0);
     if (s_used == SEM_FAILED) {
-        munmap(shmObj, sizeof(*shmObj));
+        munmap(shm_obj, sizeof(*shm_obj));
         shm_unlink("/shm");
         sem_close(s_free);
         sem_unlink("/s_free");
@@ -123,7 +121,7 @@ int main( int argc, char *argv[] ) {
 
     sem_t *s_write = sem_open("/s_write", O_CREAT | O_EXCL, 0600, 1);
     if (s_write == SEM_FAILED) {
-        munmap(shmObj, sizeof(*shmObj));
+        munmap(shm_obj, sizeof(*shm_obj));
         shm_unlink("/shm");
         sem_close(s_free);
         sem_unlink("/s_free");
@@ -132,93 +130,92 @@ int main( int argc, char *argv[] ) {
         exit(EXIT_FAILURE);
     }
 
-    struct sigaction sa = {
-            .sa_handler = &handle_signal
-    };
-
+    struct sigaction sa;
+    memset(&sa, 0, sizeof(sa));
+    sa.sa_handler = handle_signal;
     sigaction(SIGINT, &sa, NULL);
     sigaction(SIGTERM, &sa, NULL);
 
-    int exit_status = EXIT_SUCCESS;
+    int exit_code = EXIT_SUCCESS;
 
-    int bestSolutionCount = 100000;
-    Edge bestSolution[8];
+    int best_solution_length = 100000;
+    Edge best_solution[8];
     while (!quit) {
 
         if (sem_wait(s_used) == -1) {
             if (errno == EINTR) {
                 continue;
             }
-            exit_status = EXIT_FAILURE;
+            exit_code = EXIT_FAILURE;
             break;
         }
 
-        int edgeCounter = 0;
+        int edge_counter = 0;
         for (int i = 0; i < 8; i++) {
-            if (!(shmObj->data[shmObj->readPos][i].from == -1
-               || shmObj->data[shmObj->readPos][i].to == -1)) {
-                edgeCounter++;
+            if (!(shm_obj->data[shm_obj->readPos][i].from == -1
+               || shm_obj->data[shm_obj->readPos][i].to == -1)) {
+                edge_counter++;
             }
         }
 
-        if (edgeCounter == 0) {
+        if (edge_counter == 0) {
             fprintf(stdout, "The graph is 3-colorable \n");
             break;
         }
 
-        else if (edgeCounter < bestSolutionCount) {
-            bestSolutionCount = edgeCounter;
-            fprintf(stdout, "Solution with %d edge(s):", edgeCounter);
+        else if (edge_counter < best_solution_length) {
+            best_solution_length = edge_counter;
+            fprintf(stdout, "Solution with %d edge(s):", edge_counter);
 
             for (int i = 0; i < 8; i++) {
-                if (!(shmObj->data[shmObj->readPos][i].from == -1 ||
-                      shmObj->data[shmObj->readPos][i].to == -1)) {
+                if (!(shm_obj->data[shm_obj->readPos][i].from == -1 ||
+                      shm_obj->data[shm_obj->readPos][i].to == -1)) {
 
-                    bestSolution[i] = shmObj->data[shmObj->readPos][i];
-                    fprintf(stdout, " %d-%d", bestSolution[i].from, bestSolution[i].to);
+                    best_solution[i] = shm_obj->data[shm_obj->readPos][i];
+                    fprintf(stdout, " %d-%d", best_solution[i].from, best_solution[i].to);
 
                 }
             }
 
             fprintf(stdout, "\n");
-
         }
 
-        shmObj->readPos = (shmObj->readPos + 1) % 50;
+
+
+        shm_obj->readPos = (shm_obj->readPos + 1) % 50;
         sem_post(s_free);
     }
 
-    // terminate and unmap operations
-    shmObj->terminate = 1;
+    shm_obj->terminate = 1;
 
     if (sem_close(s_free) == -1) {
-        exit_status = EXIT_FAILURE;
+        exit_code = EXIT_FAILURE;
     }
     if (sem_close(s_used) == -1) {
-        exit_status = EXIT_FAILURE;
+        exit_code = EXIT_FAILURE;
     }
     if (sem_close(s_write) == -1) {
-        exit_status = EXIT_FAILURE;
+        exit_code = EXIT_FAILURE;
     }
 
     if (sem_unlink("/s_free") == -1) {
-        exit_status = EXIT_FAILURE;
+        exit_code = EXIT_FAILURE;
     }
     if (sem_unlink("/s_used") == -1) {
-        exit_status = EXIT_FAILURE;
+        exit_code = EXIT_FAILURE;
     }
     if (sem_unlink("/s_write") == -1) {
-        exit_status = EXIT_FAILURE;
+        exit_code = EXIT_FAILURE;
     }
 
-    if (munmap(shmObj, sizeof(*shmObj)) == -1) {
-        exit_status = EXIT_FAILURE;
+    if (munmap(shm_obj, sizeof(*shm_obj)) == -1) {
+        exit_code = EXIT_FAILURE;
     }
 
     if (shm_unlink("/shm") == -1) {
-        exit_status = EXIT_FAILURE;
+        exit_code = EXIT_FAILURE;
     }
 
-    exit(exit_status);
+    exit(exit_code);
 
 }
