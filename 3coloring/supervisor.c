@@ -44,14 +44,19 @@ void printUsageError() {
 
 /**
  * handles SIGTERM and SIGINT signals.
- * @brief The program starts here. This function takes care about input arguments.
- * All Edges are added to the EdgeArray. The EdgeArray is than passed to the handleSolutions Function.
+ * @brief the program prints the signal and sets the global var quit to 1,
+ * so the program can terminate.
  * @param signal, the signal that should be handed
- * @details global variables: quit, indicated if program should exit
+ * @details global variables: quit, program_name
  **/
 void handle_signal(int signal) {
 
-    fprintf(stderr, "\nExiting due to %s\n", (signal == SIGTERM) ? "SIGTERM" : "SIGINT");
+    if ( signal == SIGTERM ) {
+        fprintf(stderr, "\n%sExiting due to signal SIGTERM\n", program_name);
+    } else {
+        fprintf(stderr, "\n%sExiting due to signal SIGINT\n", program_name);
+    }
+
     quit = 1;
 
 }
@@ -60,7 +65,7 @@ void handle_signal(int signal) {
 /**
  * Program entry point.
  * @brief The program starts here. This function takes care about parameters.
- * Then it created the shared memory and semaphores. After initialization the
+ * Then it creates the shared memory and semaphores. After initialization the
  * program waits for solutions from the generators and handles the results.
  * global variables: program_name, quit
  * @param argc The argument counter.
@@ -159,7 +164,7 @@ int main( int argc, char *argv[] ) {
         }
 
         if (edge_counter == 0) {
-            fprintf(stdout, "The graph is 3-colorable \n");
+            fprintf(stdout, "The graph is 3-colorable!\n");
             break;
         }
 

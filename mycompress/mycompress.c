@@ -14,9 +14,6 @@
 #include <getopt.h>
 #include "mycompress.h"
 
-int charCounter;
-int writeCounter;
-
 /**
  * Pointer to name of program
  **/
@@ -24,8 +21,8 @@ static char *program_name;
 
 /**
  * printUsageError function.
- * @brief Usage of program is printed to stderr and program is exited with failure code
- * @details global variables: program_name, contains the name of the program
+ * @brief Usage of program is printed to stderr and program is exited with failure code.
+ * @details global variables: program_name, contains the name of the program.
  **/
 void printUsageError() {
 
@@ -34,55 +31,60 @@ void printUsageError() {
 
 }
 
-
 /**
- * Compress function. Compresses input file to output file
+ * Compress function. Compresses input file to output file.
  * @brief this functions iterates through all characters from the input
- * file and manages the occuourences
+ * file and manages the occurrences.
  * @param files contains current files
  * @param counter contains char count and written count
+ * @return 1 if success and -1 if failure
  **/
 char compress(Files files, Counter * counter) {
 
-    char active;
+    char active_char;
     char prev = EOF;
     int current_char_counter = 0;
 
-    while ((active = fgetc(files.inputFile)) != EOF) {
+    while ((active_char = fgetc(files.inputFile)) != EOF) {
 
         if (prev == EOF) {
             current_char_counter++;
-        } else if (prev == active) {
+        } else if (prev == active_char) {
             current_char_counter++;
-        } else if (prev != active || active == EOF) {
+        } else if ( prev != active_char ) {
             counter->char_counter += current_char_counter;
             counter->written_counter += 2;
             fprintf(files.outputFile, "%c%i", prev, current_char_counter);
             current_char_counter = 1;
+        } else {
+            return -1;
         }
-        prev = active;
+
+        prev = active_char;
 
     }
 
     counter->char_counter += current_char_counter;
     counter->written_counter += 2;
-    fprintf(files.outputFile, "%c%i", prev, current_char_counter);
 
+    fprintf(files.outputFile, "%c%i", prev, current_char_counter);
     fclose(files.inputFile);
 
-    return 0;
+    return 1;
 }
 
 /**
  * Program entry point.
  * @brief The program starts here. This function takes care about parameters and calls
- * the compress function for every input file
+ * the compress function for every given input file. After compression of all given files
+ * this functions prints the statistics to stderr.
  * @param argc The argument counter.
  * @param argv The argument vector.
+ * @details global variables: program_name, contains the name of the program
+ * @return Exits the program with EXIT_SUCCESS or EXIT_FAILURE
  **/
 int main(int argc, char **argv) {
-
-    int option;
+    
     Counter counter;
     counter.char_counter = 0;
     counter.written_counter = 0;
@@ -91,13 +93,14 @@ int main(int argc, char **argv) {
     files.inputFile = stdin;
     files.outputFile = stdout;
 
+    int current_option;
     int o_flag = 0;
     int current_arg = 0;
 
-    while ((option = getopt(argc, argv, "o:")) != -1) {
+    while ((current_option = getopt(argc, argv, "o:")) != -1) {
 
 
-        switch (option) {
+        switch (current_option) {
 
             case 'o':
 
@@ -141,7 +144,9 @@ int main(int argc, char **argv) {
                 current_arg++) {
 
             files.inputFile = fopen(argv[current_arg], "r");
-            compress(files, &counter);
+            if (compress(files, &counter) != 0) {
+                fprintf(stderr, "%s: File couldn't be compressed", program_name);
+            }
             fclose(files.inputFile);
 
         }

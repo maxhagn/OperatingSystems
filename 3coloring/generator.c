@@ -19,9 +19,8 @@
 #include <fcntl.h>
 #include <errno.h>
 
-#include "generator.h"
 #include "structs.h"
-
+#include "generator.h"
 
 /**
  * Pointer to name of program
@@ -59,87 +58,107 @@ int getMinimum( int a, int b ) {
  * @return integer 1 if successful, integer -1 if failure
  **/
 static int addToArray(EdgeArray *edges, Edge edge) {
-    Edge *new_data = realloc(edges->content, (edges->length + 1) * sizeof(Edge));
+    Edge *new_array_length = realloc(edges->content, (edges->length + 1) * sizeof(Edge));
 
     if (new_data == NULL) {
         return -1;
     }
 
     edges->length = (edges->length) + 1;
-    edges->content = new_data;
+    edges->content = new_array_length;
     (edges->content)[(edges->length) - 1] = edge;
 
     return 1;
 }
 
 /**
- * generates a new solution
- * @brief adds a random coloring to the vertexes and deletes edges between vertexes with the same color
+ * generates a new solution and adds the edges to the circular buffer
+ * @brief adds a random coloring to the vertexes and deletes edges between vertexes with the same color.
+ * As long as the solution is smaller than eight, the edges are added to the circular buffer.
  * @param *edges - pointer to the given edges
+ * @param *shm_obj - pointer to the mapped shared memory object
  * @return Edge Array, array that holds the new solution
  **/
-static EdgeArray generate(EdgeArray *edges) {
-    int nodeColoring[edges->length];
+static int generate(EdgeArray *edges, ShmObj *shm_obj) {
+    int colored_nodes[edges->length];
     for (int i = 0; i < edges->length; i++) {
         int num = (rand() %(3)) + 1;
-        nodeColoring[i] = num;
+        colored_nodes[i] = num;
     }
 
-    EdgeArray *returnEdges = (EdgeArray *) malloc(sizeof(EdgeArray));
-    returnEdges->content = (Edge *) malloc(sizeof(Edge));
-    returnEdges->length = 0;
+    EdgeArray *solution_edges = (EdgeArray *) malloc(sizeof(EdgeArray));
+    solution_edges->content = (Edge *) malloc(sizeof(Edge));
+    solution_edges->length = 0;
 
     int NumberColorConflicts = 0;
     for (int i = 0;  i < edges->length;  i++) {
 
-        if(nodeColoring[edges->content[i].from] == nodeColoring[edges->content[i].to]){
+        if(colored_nodes[edges->content[i].from] == colored_nodes[edges->content[i].to]){
             if ( NumberColorConflicts < 8 ) {
-                addToArray(returnEdges, edges->content[i]);
+                addToArray(solution_edges, edges->content[i]);
             }
             NumberColorConflicts++;
         }
     }
 
-    return *returnEdges;
+    if (solution_edges->length <= 8) {
+        int solution_length = getMinimum(8, solution_edges->length);
+        for (int i = 0; i < getMinimum(8, solution_edges->length); i++) {
+            shm_obj->data[shm_obj->writePos][i] = solution_edges->content[i];
+        }
+
+        for (int i = solution_length; i < 8; i++) {
+            Edge new_edge;
+
+            new_edge.from = -1;
+            new_edge.to = -1;
+
+            shm_obj->data[shm_obj->writePos][i] = new_edge;
+        }
+    }
+
+    free(solution_edges->content);
+    free(solution_edges);
+    return 1;
 }
 
 /**
  * handles new solutions
  * @brief opens all semaphores and shared memory, calls generate and adds solution to circular buffer
- * @param *edgeArray - pointer to given edges, forwarded to generate methode
+ * @param edge_array - pointer to given edges, forwarded to generate methode
  * @return integer 1 if success, integer -1 if failure
  **/
-static int handleSolutions(EdgeArray *edgeArray) {
+static int handleSolutions(EdgeArray *edge_array) {
 
     int openErrCode = 1;
     int shmfd = shm_open(SHM, O_RDWR, 0600);
     if (shmfd == -1) { openErrCode = -1; }
 
-    ShmObj *shmObj;
-    shmObj = mmap(NULL, sizeof(*shmObj), PROT_READ | PROT_WRITE, MAP_SHARED, shmfd, 0);
+    ShmObj *shm_obj;
+    shm_obj = mmap(NULL, sizeof(*shm_obj), PROT_READ | PROT_WRITE, MAP_SHARED, shmfd, 0);
 
-    if (shmObj == MAP_FAILED) {
+    if (shm_obj == MAP_FAILED) {
         close(shmfd);
         shm_unlink(SHM);
         openErrCode = -1;
     }
 
     if (close(shmfd) == -1) {
-        munmap(shmObj, sizeof(*shmObj));
+        munmap(shm_obj, sizeof(*shm_obj));
         shm_unlink(SHM);
         openErrCode = -1;
     }
 
     sem_t *s_free = sem_open(SEM_FREE, 0);
     if (s_free == SEM_FAILED) {
-        munmap(shmObj, sizeof(*shmObj));
+        munmap(shm_obj, sizeof(*shm_obj));
         shm_unlink(SHM);
         openErrCode = -1;
     }
 
     sem_t *s_used = sem_open(SEM_USED, 0);
     if (s_used == SEM_FAILED) {
-        munmap(shmObj, sizeof(*shmObj));
+        munmap(shm_obj, sizeof(*shm_obj));
         shm_unlink(SHM);
         sem_close(s_free);
         sem_unlink(SEM_FREE);
@@ -148,7 +167,7 @@ static int handleSolutions(EdgeArray *edgeArray) {
 
     sem_t *s_write = sem_open(SEM_WRITE, 0);
     if (s_write == SEM_FAILED) {
-        munmap(shmObj, sizeof(*shmObj));
+        munmap(shm_obj, sizeof(*shm_obj));
         shm_unlink(SHM);
         sem_close(s_free);
         sem_unlink(SEM_FREE);
@@ -181,30 +200,19 @@ static int handleSolutions(EdgeArray *edgeArray) {
             break;
         }
 
-        if (shmObj->terminate == 1) {
-            fprintf(stderr, "%s: Terminating\n", program_name);
+        if (shm_obj->terminate == 1) {
+            fprintf(stderr, "%s: Supervisor terminates %s.\n", program_name, program_name);
             sem_post(s_write);
             sem_post(s_free);
             break;
         }
-        EdgeArray newSolution = generate(edgeArray);
 
-
-        if (newSolution.length <= 8) {
-            int solutionSize = getMinimum(8, newSolution.length);
-            for (int i = 0; i < getMinimum(8, newSolution.length); i++) {
-                shmObj->data[shmObj->writePos][i] = newSolution.content[i];
-            }
-
-            for (int i = solutionSize; i < 8; i++) {
-                Edge newItem;
-                newItem.from = -1;
-                newItem.to = -1;
-                shmObj->data[shmObj->writePos][i] = newItem;
-            }
+        if ( generate(edge_array, shm_obj) == -1) {
+            exit_status = -1;
+            break;
         }
 
-        shmObj->writePos = (shmObj->writePos + 1) % 50;
+        shm_obj->writePos = (shm_obj->writePos + 1) % 50;
         sem_post(s_used);
         sem_post(s_write);
     }
@@ -229,7 +237,7 @@ static int handleSolutions(EdgeArray *edgeArray) {
         exit_status = -1;
     }
 
-    if (munmap(shmObj, sizeof(*shmObj)) == -1) {
+    if (munmap(shm_obj, sizeof(*shm_obj)) == -1) {
         exit_status = -1;
     }
 
@@ -253,9 +261,9 @@ int main(int argc, char *argv[]) {
     program_name = argv[0];
     if (argc <= 1) { printUsageError(); }
 
-    EdgeArray *edgeArray = (EdgeArray *) malloc(sizeof(EdgeArray));
-    edgeArray->content = (Edge *) malloc(sizeof(Edge));
-    edgeArray->length = 0;
+    EdgeArray *edge_array = (EdgeArray *) malloc(sizeof(EdgeArray));
+    edge_array->content = (Edge *) malloc(sizeof(Edge));
+    edge_array->length = 0;
 
     int current_arg;
     for (current_arg = 1; current_arg < argc; current_arg++) {
@@ -267,26 +275,25 @@ int main(int argc, char *argv[]) {
 
         if (sscanf_err == 0) {
             fprintf (stderr, "%s: Given Edge couldn't be parsed.\n", program_name);
-            free(edgeArray);
+            free(edge_array);
             exit(EXIT_FAILURE);
         }
-
 
         new_edge.from = tmp_from;
         new_edge.to = tmp_to;
 
 
-        if (addToArray(edgeArray, new_edge) == -1) {
-            free(edgeArray);
+        if (addToArray(edge_array, new_edge) == -1) {
+            free(edge_array);
             exit(EXIT_FAILURE);
         }
     }
 
-    if (handleSolutions(edgeArray) == -1) {
-        free(edgeArray);
+    if (handleSolutions(edge_array) == -1) {
+        free(edge_array);
         exit(EXIT_FAILURE);
     }
 
-    free(edgeArray);
+    free(edge_array);
     exit(EXIT_SUCCESS);
 }

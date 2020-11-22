@@ -19,8 +19,6 @@ supervisor: supervisor.o
 generator.o: generator.c
 	$(CC) $(CFLAGS) $(DEFS) -c generator.c
 
-
-
 supervisor.o: supervisor.c
 	$(CC) $(CFLAGS) $(DEFS) -c supervisor.c
 
