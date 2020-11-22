@@ -52,9 +52,9 @@ void printUsageError() {
 void handle_signal(int signal) {
 
     if ( signal == SIGTERM ) {
-        fprintf(stderr, "\n%sExiting due to signal SIGTERM\n", program_name);
+        fprintf(stderr, "\n%s Exiting due to signal SIGTERM\n", program_name);
     } else {
-        fprintf(stderr, "\n%sExiting due to signal SIGINT\n", program_name);
+        fprintf(stderr, "\n%s Exiting due to signal SIGINT\n", program_name);
     }
 
     quit = 1;
@@ -72,6 +72,8 @@ void handle_signal(int signal) {
  * @param argv The argument vector.
  **/
 int main( int argc, char *argv[] ) {
+    program_name = argv[0];
+
     if (argc != 1) {
         printUsageError();
     }

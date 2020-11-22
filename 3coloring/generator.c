@@ -60,7 +60,7 @@ int getMinimum( int a, int b ) {
 static int addToArray(EdgeArray *edges, Edge edge) {
     Edge *new_array_length = realloc(edges->content, (edges->length + 1) * sizeof(Edge));
 
-    if (new_data == NULL) {
+    if (new_array_length == NULL) {
         return -1;
     }
 
