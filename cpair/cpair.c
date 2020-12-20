@@ -16,6 +16,8 @@
 #include <string.h>
 #include <sys/wait.h>
 #include <math.h>
+#include <sys/types.h>
+#include <float.h>
 #include "cpair.h"
 
 /**
@@ -354,7 +356,7 @@ static int fork_array( PointArray *point_array ) {
     float distance_c1 = calc_distance(( c1_result->content )[ 0 ], ( c1_result->content )[ 1 ] );
     float distance_c2 = calc_distance(( c2_result->content )[ 0 ], ( c2_result->content )[ 1 ] );
 
-    float min = MAXFLOAT;
+    float min = FLT_MAX;
     Point result_points[2];
 
     if ( c1_result->length == 2 ) {

@@ -5,10 +5,10 @@ CFLAGS = -std=c99 -pedantic -Wall -g
 .PHONY: all clean
 all: cpair
 
-mytest: cpair.o
-	$(CC) -o cpair cpair.o
+cpair: cpair.o
+	$(CC) -o cpair cpair.o -lm
 
-mytest.o: cpair.c
+cpair.o: cpair.c
 	$(CC) $(CFLAGS) $(DEFS) -c cpair.c
 
 clean:
