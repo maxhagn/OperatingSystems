@@ -77,7 +77,7 @@ static int read_input( FILE *input, PointArray *result ) {
 
         active_point = strtok( line, " " );
         for ( int i = 0; i < 2; i++ ) {
-            if ( active_point != NULL) {
+            if ( active_point != NULL ) {
 
                 if ( i == 0 ) {
                     from = strtof( active_point, &endptr );
@@ -85,7 +85,7 @@ static int read_input( FILE *input, PointArray *result ) {
                     to = strtof( active_point, &endptr );
                 }
 
-                active_point = strtok(NULL, " " );
+                active_point = strtok( NULL, " " );
             } else {
                 free( active_point );
                 exit( EXIT_FAILURE );
@@ -95,7 +95,7 @@ static int read_input( FILE *input, PointArray *result ) {
         free( active_point );
 
         Point *new_data = realloc( result->content, (( result->length ) + 1 ) * sizeof( Point ));
-        if ( new_data == NULL) {
+        if ( new_data == NULL ) {
             free( line );
             return -1;
         }
@@ -143,7 +143,7 @@ static int fork_array( PointArray *point_array ) {
 
             Point *new_data = realloc( smaller_than_arithmetic->content,
                                        (( smaller_than_arithmetic->length ) + 1 ) * sizeof( Point ));
-            if ( new_data == NULL) {
+            if ( new_data == NULL ) {
                 return -1;
             }
 
@@ -158,7 +158,7 @@ static int fork_array( PointArray *point_array ) {
 
             Point *new_data = realloc( larger_than_arithmetic->content,
                                        (( larger_than_arithmetic->length ) + 1 ) * sizeof( Point ));
-            if ( new_data == NULL) {
+            if ( new_data == NULL ) {
                 return -1;
             }
 
@@ -213,7 +213,7 @@ static int fork_array( PointArray *point_array ) {
             return -1;
         }
 
-        execlp( "./cpair", "cpair", NULL);
+        execlp( "./cpair", "cpair", NULL );
         return -1;
 
     }
@@ -265,7 +265,7 @@ static int fork_array( PointArray *point_array ) {
             return -1;
         }
 
-        execlp( "./cpair", "cpair", NULL);
+        execlp( "./cpair", "cpair", NULL );
         return -1;
 
     }
@@ -280,7 +280,7 @@ static int fork_array( PointArray *point_array ) {
 
 
     FILE *file_p_to_c1 = fdopen( pipe_p_to_c1[ 1 ], "w" );
-    if ( file_p_to_c1 != NULL) {
+    if ( file_p_to_c1 != NULL ) {
 
         for ( int i = 0; i < smaller_than_arithmetic->length; i++ ) {
             if ( fprintf( file_p_to_c1, "%f %f\n", ( smaller_than_arithmetic->content )[ i ].from,
@@ -289,12 +289,12 @@ static int fork_array( PointArray *point_array ) {
             }
         }
 
-        if ( fflush( file_p_to_c1 ) == EOF) {
+        if ( fflush( file_p_to_c1 ) == EOF ) {
             return -1;
         }
 
 
-        if ( fclose( file_p_to_c1 ) == EOF) {
+        if ( fclose( file_p_to_c1 ) == EOF ) {
             return -1;
         }
 
@@ -303,7 +303,7 @@ static int fork_array( PointArray *point_array ) {
     }
 
     FILE *file_p_to_c2 = fdopen( pipe_p_to_c2[ 1 ], "w" );
-    if ( file_p_to_c2 != NULL) {
+    if ( file_p_to_c2 != NULL ) {
 
         for ( int i = 0; i < larger_than_arithmetic->length; i++ ) {
             if ( fprintf( file_p_to_c2, "%f %f\n", ( larger_than_arithmetic->content )[ i ].from,
@@ -312,10 +312,10 @@ static int fork_array( PointArray *point_array ) {
             }
         }
 
-        if ( fflush( file_p_to_c2 ) == EOF)
+        if ( fflush( file_p_to_c2 ) == EOF )
             return -1;
 
-        if ( fclose( file_p_to_c2 ) == EOF)
+        if ( fclose( file_p_to_c2 ) == EOF )
             return -1;
 
     } else {
@@ -403,11 +403,11 @@ static int fork_array( PointArray *point_array ) {
     fprintf( stdout, "%f %f\n", result_points[ 1 ].from, result_points[ 1 ].to );
 
 
-    if ( fflush( stdout ) == EOF) {
+    if ( fflush( stdout ) == EOF ) {
         return -1;
     }
 
-    if ( fclose( stdout ) == EOF) {
+    if ( fclose( stdout ) == EOF ) {
         return -1;
     }
 
