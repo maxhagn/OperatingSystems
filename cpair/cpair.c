@@ -99,6 +99,7 @@ static int read_input( FILE *input, PointArray *result ) {
             free( line );
             return -1;
         }
+
         result->length = ( result->length ) + 1;
         result->content = new_data;
         ( result->content )[ ( result->length ) - 1 ].from = from;
@@ -278,48 +279,48 @@ static int fork_array( PointArray *point_array ) {
     }
 
 
-    FILE *out;
-    out = fdopen( pipe_p_to_c1[ 1 ], "w" );
-    if ( out != NULL) {
+    FILE *file_p_to_c1 = fdopen( pipe_p_to_c1[ 1 ], "w" );
+    if ( file_p_to_c1 != NULL) {
 
         for ( int i = 0; i < smaller_than_arithmetic->length; i++ ) {
-            if ( fprintf( out, "%f %f\n", ( smaller_than_arithmetic->content )[ i ].from,
+            if ( fprintf( file_p_to_c1, "%f %f\n", ( smaller_than_arithmetic->content )[ i ].from,
                           ( smaller_than_arithmetic->content )[ i ].to ) < 0 ) {
                 return -1;
             }
         }
 
-        if ( fflush( out ) == EOF)
+        if ( fflush( file_p_to_c1 ) == EOF) {
             return -1;
+        }
 
-        if ( fclose( out ) == EOF)
+
+        if ( fclose( file_p_to_c1 ) == EOF) {
             return -1;
+        }
 
     } else {
         return -1;
     }
 
-    out = fdopen( pipe_p_to_c2[ 1 ], "w" );
-    if ( out != NULL) {
+    FILE *file_p_to_c2 = fdopen( pipe_p_to_c2[ 1 ], "w" );
+    if ( file_p_to_c2 != NULL) {
 
         for ( int i = 0; i < larger_than_arithmetic->length; i++ ) {
-            if ( fprintf( out, "%f %f\n", ( larger_than_arithmetic->content )[ i ].from,
+            if ( fprintf( file_p_to_c2, "%f %f\n", ( larger_than_arithmetic->content )[ i ].from,
                           ( larger_than_arithmetic->content )[ i ].to ) < 0 ) {
                 return -1;
             }
         }
 
-        if ( fflush( out ) == EOF)
+        if ( fflush( file_p_to_c2 ) == EOF)
             return -1;
 
-        if ( fclose( out ) == EOF)
+        if ( fclose( file_p_to_c2 ) == EOF)
             return -1;
 
     } else {
         return -1;
     }
-
-    fclose( out );
 
     int status[2];
     int c1_error_code = waitpid( c1_id, &status[ 0 ], 0 );
