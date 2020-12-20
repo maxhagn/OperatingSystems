@@ -32,7 +32,7 @@ static char *program_name;
  * @brief Usage of program is printed to stderr and program is exited with failure code
  * @details global variables: program_name, contains the name of the program
  **/
-void printUsageError() {
+static void printUsageError(void) {
 
     fprintf(stderr, "Usage: %s EDGE1...\n", program_name);
     exit(EXIT_FAILURE);
@@ -45,7 +45,7 @@ void printUsageError() {
  * @param a - first integer
  * @param b - second integer
  **/
-int getMinimum( int a, int b ) {
+static int getMinimum( int a, int b ) {
     if ( a < b ) { return a; }
     else { return b; }
 }
@@ -60,7 +60,7 @@ int getMinimum( int a, int b ) {
 static int addToArray(EdgeArray *edges, Edge edge) {
     Edge *new_array_length = realloc(edges->content, (edges->length + 1) * sizeof(Edge));
 
-    if (new_data == NULL) {
+    if (new_array_length == NULL) {
         return -1;
     }
 

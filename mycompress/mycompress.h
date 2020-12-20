@@ -1,9 +1,9 @@
 /**
- * @file structs.c
+ * @file mycompress.h
  * @author Maximilian Hagn <11808237@student.tuwien.ac.at>
  * @date 21.11.2020
  *
- * @brief Contains all structs for generator.c and supervisor.c modules
+ * @brief contains structs for mycompress.c
  *
  **/
 

@@ -35,7 +35,7 @@ static char *program_name;
  * @brief Usage of program is printed to stderr and program is exited with failure code
  * @details global variables: program_name, contains the name of the program
  **/
-void printUsageError() {
+static void printUsageError(void) {
 
     fprintf(stderr, "Usage: %s\n", program_name);
     exit(EXIT_FAILURE);
@@ -49,12 +49,12 @@ void printUsageError() {
  * @param signal, the signal that should be handed
  * @details global variables: quit, program_name
  **/
-void handle_signal(int signal) {
+static void handle_signal(int signal) {
 
     if ( signal == SIGTERM ) {
-        fprintf(stderr, "\n%sExiting due to signal SIGTERM\n", program_name);
+        fprintf(stderr, "\n%s Exiting due to signal SIGTERM\n", program_name);
     } else {
-        fprintf(stderr, "\n%sExiting due to signal SIGINT\n", program_name);
+        fprintf(stderr, "\n%s Exiting due to signal SIGINT\n", program_name);
     }
 
     quit = 1;
@@ -72,6 +72,8 @@ void handle_signal(int signal) {
  * @param argv The argument vector.
  **/
 int main( int argc, char *argv[] ) {
+    program_name = argv[0];
+
     if (argc != 1) {
         printUsageError();
     }

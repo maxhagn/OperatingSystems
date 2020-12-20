@@ -11,10 +11,10 @@ CFLAGS = -std=c99 -pedantic -Wall -g
 all: supervisor generator
 
 generator: generator.o
-	$(CC) -o generator generator.o
+	$(CC) -o generator generator.o -lrt -lpthread
 
 supervisor: supervisor.o
-	$(CC) -o supervisor supervisor.o
+	$(CC) -o supervisor supervisor.o -lrt -lpthread
 
 generator.o: generator.c
 	$(CC) $(CFLAGS) $(DEFS) -c generator.c
