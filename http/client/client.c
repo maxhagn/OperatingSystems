@@ -44,13 +44,13 @@ static void usage( void ) {
 static struct Url parse_url( char *url ) {
 
     struct Url parsed_url;
-    char* tmp_host = NULL;
-    char* tmp_path = NULL;
+    char *tmp_host = NULL;
+    char *tmp_path = NULL;
     char ending_chars[] = ";/?:@=&";
 
     if ( strstr( url, "http://" )) {
         size_t len = strlen( url );
-        char *url_short = (char *)malloc( len + 1);
+        char *url_short = ( char * ) malloc( len + 1 );
         memcpy( url_short, url, len );
         url_short[ len ] = '\0';
         url_short += strlen( "http://" );
@@ -60,49 +60,48 @@ static struct Url parse_url( char *url ) {
         if ( url_path == NULL ) {
 
             tmp_host = malloc( strlen( url_short ) + 1 );
-            memset(tmp_host, 0, strlen( url_short ) + 1);
-            memcpy( tmp_host, url_short, strlen( url_short ) );
+            memset( tmp_host, 0, strlen( url_short ) + 1 );
+            memcpy( tmp_host, url_short, strlen( url_short ));
 
-            tmp_path = malloc( strlen("/") + 1 );
-            memset(tmp_path, 0, 2);
+            tmp_path = malloc( strlen( "/" ) + 1 );
+            memset( tmp_path, 0, 2 );
             char *slash = "/";
-            memcpy( tmp_path, slash, strlen( slash ) );
+            memcpy( tmp_path, slash, strlen( slash ));
 
         } else {
 
             int path_length = strlen( url_path );
-            tmp_path = malloc(path_length + 1);
-            memset(tmp_path, 0, path_length + 1);
-            memcpy(tmp_path, url_path, path_length);
+            tmp_path = malloc( path_length + 1 );
+            memset( tmp_path, 0, path_length + 1 );
+            memcpy( tmp_path, url_path, path_length );
 
             int host_length = strlen( url_short ) - strlen( tmp_path );
-            tmp_host = malloc(host_length + 1);
-            memset(tmp_host, 0, host_length + 1);
-            memcpy(tmp_host, url_short, host_length );
+            tmp_host = malloc( host_length + 1 );
+            memset( tmp_host, 0, host_length + 1 );
+            memcpy( tmp_host, url_short, host_length );
 
 
         }
 
-        free(url_short - strlen("http://"));
+        free( url_short - strlen( "http://" ));
     } else {
         free( url );
         fprintf( stderr, "The given URL is invalid by this assignment specification" );
         exit( EXIT_FAILURE );
     }
 
-    parsed_url.host = malloc(strlen(tmp_host) + 1);
-    strcpy(parsed_url.host, tmp_host);
-    parsed_url.path = malloc(strlen(tmp_path) + 1);
-    strcpy(parsed_url.path, tmp_path);
-
+    parsed_url.host = malloc( strlen( tmp_host ) + 1 );
+    strcpy( parsed_url.host, tmp_host );
+    parsed_url.path = malloc( strlen( tmp_path ) + 1 );
+    strcpy( parsed_url.path, tmp_path );
 
 
     if ( tmp_path != NULL ) {
-        free(tmp_path);
+        free( tmp_path );
     }
 
     if ( tmp_host != NULL ) {
-        free(tmp_host);
+        free( tmp_host );
     }
 
 
@@ -123,7 +122,7 @@ static struct Url parse_url( char *url ) {
 static void request( char *url, char *port, FILE *output_file ) {
 
     struct Url parsed_url = parse_url( url );
-    
+
     struct addrinfo hints, *ai;
     memset( &hints, 0, sizeof( hints ));
     hints.ai_family = AF_INET;
@@ -159,7 +158,7 @@ static void request( char *url, char *port, FILE *output_file ) {
         exit( EXIT_FAILURE );
     }
 
-    free(request);
+    free( request );
 
     if ( fflush( sockfile ) == EOF ) {
         fprintf( stderr, "Couldn't sent the request to server" );
@@ -186,27 +185,25 @@ static void request( char *url, char *port, FILE *output_file ) {
 
                 char *remaining_chars;
                 int status_code = strtol( line_copy, &remaining_chars, 10 );
-                free(line_copy - strlen("HTTP/1.1"));
+                free( line_copy - strlen( "HTTP/1.1" ));
 
                 if ( status_code != 200 ) {
                     free( url );
-                    free(line);
+                    free( line );
                     line = NULL;
-                    free(parsed_url.host);
-                    free(parsed_url.path);
+                    free( parsed_url.host );
+                    free( parsed_url.path );
                     freeaddrinfo( ai );
                     fclose( sockfile );
                     fprintf( stderr, "Response: %sNo Success\n", line );
                     exit( 3 );
                 }
 
-
-
             }
         } else {
-        if ( is_response_body == 1 ) {
-                        fprintf( output_file, "%s", line );
-                    }
+            if ( is_response_body == 1 ) {
+                fprintf( output_file, "%s", line );
+            }
             if ( strcmp( line, "\r\n" ) == 0 ) {
                 is_response_body = 1;
             }
@@ -215,9 +212,9 @@ static void request( char *url, char *port, FILE *output_file ) {
         line_counter++;
     }
 
-    free(line);
-    free(parsed_url.host);
-    free(parsed_url.path);
+    free( line );
+    free( parsed_url.host );
+    free( parsed_url.path );
     freeaddrinfo( ai );
     fclose( sockfile );
 
@@ -275,9 +272,9 @@ int main( int argc, char *argv[] ) {
         usage( );
     }
 
-    char *url = malloc( strlen( argv[ optind ] ) + 1);
-    memset( url, 0, strlen( argv[ optind ]) + 1);
-    memcpy( url, argv[ optind ], strlen( argv[ optind ]));
+    char *url = malloc( strlen( argv[ optind ] ) + 1 );
+    memset( url, 0, strlen( argv[ optind ] ) + 1 );
+    memcpy( url, argv[ optind ], strlen( argv[ optind ] ));
 
     char *remaining_chars;
     int port_numeric = strtol( port, &remaining_chars, 10 );
@@ -291,7 +288,7 @@ int main( int argc, char *argv[] ) {
     if ( directory_option != NULL ) {
         size_t url_length = strlen( url ) + 1;
         char *url_copy = malloc( url_length );
-        memset(url_copy, 0, url_length);
+        memset( url_copy, 0, url_length );
         memcpy( url_copy, url, url_length );
 
         char *requested_file_name = strrchr( url_copy, '/' );
@@ -319,7 +316,7 @@ int main( int argc, char *argv[] ) {
             strcat( directory_option, "/index.html" );
         }
 
-        free(url_copy);
+        free( url_copy );
         file_path = malloc( strlen( directory_option ) + 1 );
         strcpy( file_path, directory_option );
         free( directory_copy );
